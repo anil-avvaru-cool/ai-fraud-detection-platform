@@ -109,3 +109,67 @@ From the [platform Decision Log](https://github.com/anil-avvaru-cool/redwood-ai-
 | DEC-005 | Graph features as second-pass — mirrors Neo4j live query at inference time |
 | DEC-007 | 33% fraud rate in synthetic data — corrected via `scale_pos_weight`, not data ratio |
 | DEC-010 | `risk_score_at_issuance` re-enters fraud scoring — the shared data spine |
+
+## Git Repository Structure
+
+```text
+ai-fraud-detection-platform/
+├── config.py                          ← tier thresholds, latency budgets, PSI config, Neo4j/Redis
+├── requirements.txt
+├── .gitignore                         ← data/ explicitly excluded (owned by insurance-data-platform)
+│
+├── fraud_scoring/
+│   ├── ensemble/
+│   │   ├── tabular_model.py           ← XGBoost on 20-feature fraud vector
+│   │   └── meta_learner.py            ← stacking meta-learner (LR or LightGBM)
+│   ├── graph/
+│   │   ├── gnn_scorer.py              ← GraphSAGE (async path)
+│   │   └── neo4j_client.py            ← sync (1–2 hop) + async (3+ hop) query helpers
+│   ├── nlp/
+│   │   └── narrative_scorer.py        ← inconsistency + complexity scores
+│   ├── vision/
+│   │   └── image_scorer.py            ← ViT + CLIP (hash check sync, full ViT async)
+│   └── anomaly/
+│       └── anomaly_detector.py        ← Isolation Forest / Autoencoder
+│
+├── decision_engine/
+│   ├── orchestrator.py                ← tier routing + adverse action docs
+│   ├── rules_engine.py                ← business rules, state DOI constraints
+│   └── action_router.py               ← dispatches to STP / evidence / SIU / hold
+│
+├── inference/
+│   ├── sync/
+│   │   └── fnol_scorer.py             ← <100ms path, latency budgets documented
+│   └── async/
+│       └── deep_enrichment.py         ← post-submission enrichment, escalation hook
+│
+├── explainability/
+│   ├── shap_explainer.py              ← top-5 SHAP + counterfactuals + adverse action
+│   └── graph_explainer.py             ← fraud ring path → human-readable explanation
+│
+├── monitoring/
+│   ├── psi_drift/
+│   │   └── score_drift.py             ← score + feature PSI, keyed on fnol_submitted_at
+│   ├── shap/
+│   │   └── shap_monitor.py            ← SHAP snapshot write + drift comparison
+│   └── champion_challenger/
+│       └── cc_framework.py            ← shadow → Gini check → phased rollout → promote
+│
+├── investigator_copilot/
+│   ├── case_summary.py                ← auto-generated case brief, evidence checklist
+│   └── feedback_loop.py               ← confirms/clears/escalates → label store
+│
+├── adversarial/
+│   └── red_team_pipeline.py           ← synthetic identities, image spoofing, ring sim
+│
+├── api/
+│   ├── fraud_score_router.py          ← FastAPI: /score/sync, /score/async, /explanation
+│   └── schemas.py                     ← Pydantic schemas (DEC-009: no standalone JSON Schema)
+│
+├── tests/
+│   ├── unit/
+│   └── integration/
+│
+├── docs/                              ← architecture diagrams, sync/async latency table
+└── scripts/
+```
