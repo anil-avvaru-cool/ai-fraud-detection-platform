@@ -6,6 +6,16 @@
 Ensemble fraud scoring, graph intelligence, and sync/async inference — the adversarial
 risk orchestration system at the heart of the Redwood AI claims pipeline.
 
+## Local Setup
+
+See **[docs/local_setup.md](docs/local_setup.md)** for:
+- Prerequisites (Python 3.11+, UV, Docker)
+- Environment variables and `.env` configuration
+- Starting Redis and Neo4j via Docker Compose
+- Installing dependencies, running the API, training the model, and running tests
+
+---
+
 ## Overview
 
 Modern fraud detection is not a supervised classification problem. It is an
